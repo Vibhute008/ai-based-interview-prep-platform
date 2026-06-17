@@ -3,6 +3,8 @@ import { google } from "@ai-sdk/google";
 import { db } from "@/firebase/admin";
 import { getRandomInterviewCover } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 // CORS headers helper
 const corsHeaders = {
     //"Access-Control-Allow-Origin":"http://localhost:3000",
