@@ -1,6 +1,6 @@
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
-import { db } from "@/firebase/admin";
+import { getFirebaseAdmin } from "@/firebase/admin";
 import { getRandomInterviewCover } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -96,6 +96,10 @@ export async function POST(request: Request) {
             createdAt: new Date().toISOString(),
         };
 
+        const { db } = await getFirebaseAdmin();
+        if (!db) {
+            throw new Error("Database not configured");
+        }
         await db.collection("interviews").add(interview);
 
         return new Response(JSON.stringify({

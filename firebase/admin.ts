@@ -1,13 +1,23 @@
-import { initializeApp, getApps, cert } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
+import type { Auth } from "firebase-admin/auth";
+import type { Firestore } from "firebase-admin/firestore";
 
-// Initialize Firebase Admin SDK
-function initFirebaseAdmin() {
-    const apps = getApps();
+let authInstance: Auth | null = null;
+let dbInstance: Firestore | null = null;
 
-    if (!apps.length) {
-        try {
+// Initialize Firebase Admin SDK lazily
+export async function getFirebaseAdmin(): Promise<{ auth: Auth | null; db: Firestore | null }> {
+    if (authInstance && dbInstance) {
+        return { auth: authInstance, db: dbInstance };
+    }
+
+    try {
+        const { getApps, initializeApp, cert } = await import("firebase-admin/app");
+        const { getAuth } = await import("firebase-admin/auth");
+        const { getFirestore } = await import("firebase-admin/firestore");
+
+        const apps = getApps();
+
+        if (!apps.length) {
             // Validate that all required environment variables are present
             if (
                 !process.env.FIREBASE_PROJECT_ID ||
@@ -28,17 +38,18 @@ function initFirebaseAdmin() {
                     privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
                 }),
             });
-        } catch (error) {
-            console.error("❌ Failed to initialize Firebase Admin:", error instanceof Error ? error.message : String(error));
-            console.warn("Please verify your Firebase credentials in the .env.local file are correctly formatted.");
-            return { auth: null, db: null };
         }
+
+        authInstance = getAuth();
+        dbInstance = getFirestore();
+    } catch (error) {
+        console.error("❌ Failed to initialize Firebase Admin:", error instanceof Error ? error.message : String(error));
+        console.warn("Please verify your Firebase credentials in the .env.local file are correctly formatted.");
+        return { auth: null, db: null };
     }
 
     return {
-        auth: getAuth(),
-        db: getFirestore(),
+        auth: authInstance,
+        db: dbInstance,
     };
 }
-
-export const { auth, db } = initFirebaseAdmin();

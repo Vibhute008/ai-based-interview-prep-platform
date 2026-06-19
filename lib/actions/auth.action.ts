@@ -1,6 +1,6 @@
 "use server";
 
-import { auth, db } from "@/firebase/admin";
+import { getFirebaseAdmin } from "@/firebase/admin";
 import { cookies } from "next/headers";
 
 // Session duration (1 week)
@@ -8,6 +8,7 @@ const SESSION_DURATION = 60 * 60 * 24 * 7;
 
 // Set session cookie
 export async function setSessionCookie(idToken: string) {
+    const { auth } = await getFirebaseAdmin();
     if (!auth) {
         throw new Error("Firebase Admin auth is not configured");
     }
@@ -32,6 +33,7 @@ export async function setSessionCookie(idToken: string) {
 export async function signUp(params: SignUpParams) {
     const { uid, name, email } = params;
 
+    const { db } = await getFirebaseAdmin();
     if (!db) {
         return {
             success: false,
@@ -88,6 +90,7 @@ export async function signUp(params: SignUpParams) {
 export async function signIn(params: SignInParams) {
     const { email, idToken } = params;
 
+    const { auth } = await getFirebaseAdmin();
     if (!auth) {
         return {
             success: false,
@@ -132,6 +135,7 @@ export async function getCurrentUser(): Promise<User | null> {
     if (!sessionCookie) return null;
 
     try {
+        const { auth, db } = await getFirebaseAdmin();
         if (!auth || !db) return null;
 
         const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);

@@ -3,7 +3,7 @@
 import { generateObject } from "ai";
 import { google } from "@ai-sdk/google";
 
-import { db } from "@/firebase/admin";
+import { getFirebaseAdmin } from "@/firebase/admin";
 import { feedbackSchema } from "@/constants";
 
 function getCreatedAtMs(createdAt: unknown): number {
@@ -24,6 +24,10 @@ function sortInterviewsByNewest(interviews: Interview[]): Interview[] {
 
 export async function createFeedback(params: CreateFeedbackParams) {
     const { interviewId, userId, transcript, feedbackId } = params;
+    const { db } = await getFirebaseAdmin();
+    if (!db) {
+        throw new Error("Database not configured");
+    }
 
     try {
         const formattedTranscript = transcript
@@ -83,6 +87,8 @@ export async function createFeedback(params: CreateFeedbackParams) {
 }
 
 export async function getInterviewById(id: string): Promise<Interview | null> {
+    const { db } = await getFirebaseAdmin();
+    if (!db) return null;
     const interview = await db.collection("interviews").doc(id).get();
 
     return interview.data() as Interview | null;
@@ -93,6 +99,8 @@ export async function getFeedbackByInterviewId(
 ): Promise<Feedback | null> {
     const { interviewId, userId } = params;
 
+    const { db } = await getFirebaseAdmin();
+    if (!db) return null;
     const querySnapshot = await db
         .collection("feedback")
         .where("interviewId", "==", interviewId)
@@ -111,6 +119,7 @@ export async function getLatestInterviews(
 ): Promise<Interview[] | null> {
     const { userId, limit = 20 } = params;
 
+    const { db } = await getFirebaseAdmin();
     if (!userId || !db) return [];
 
     const interviews = await db
@@ -131,6 +140,7 @@ export async function getLatestInterviews(
 export async function getInterviewsByUserId(
     userId: string
 ): Promise<Interview[] | null> {
+    const { db } = await getFirebaseAdmin();
     if (!userId || !db) return [];
 
     const interviews = await db
